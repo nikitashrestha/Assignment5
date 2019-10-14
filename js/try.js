@@ -75,7 +75,7 @@ class Car{
 
     detectXCollision(player){
 
-        if((this.x== player.x) && ((ROADHEIGHT-CARHEIGHT)<=(this.y+CARHEIGHT))){
+        if((this.x== player.x) && ((this.y+CARHEIGHT)>=(ROADHEIGHT-CARHEIGHT))){
                 
             // player.setPosition()
             return true;
@@ -118,13 +118,10 @@ class Game{
         this.carHolder = [];
         this.carImagesTag = [];
         this.player = null;
-        this.playerID = null;
         this.obstacles = [];
         this.arrowCount = 1;
         this.roadBgBotttom = 0;
         this.gameOverDiv = null;
-        this.yesButton = null;
-        this.noButton = null;
 
         //creating game elements
         this.scoreBoard = document.createElement('div');
@@ -159,7 +156,6 @@ class Game{
 
         this.showScore();
         this.createSelectCarWindow();
-        
     }
 
     showScore(){
@@ -194,6 +190,16 @@ class Game{
         this.startGame();
     }
 
+    createGameOverWindow(){
+        
+        this.gameOverDiv = document.createElement('div');
+        this.gameOverDiv.classList.add('game-over');
+
+        this.gameOverDiv.innerHTML = 'Game Over<br>Do you want to play again???';
+        this.gameWindow.appendChild(this.gameOverDiv);
+
+    }
+
     selectPlayer(){
 
         var carHolder = this.selectCarDiv.getElementsByTagName('div');
@@ -209,6 +215,7 @@ class Game{
             }
         } 
     }
+    
     
     onArrowKeyPressed(){
 
@@ -281,40 +288,23 @@ class Game{
 
     createObstacles(playerID){
 
-        var randomCar = getRandomNumber(0,4);
+        var noOfObstacles = getRandomNumber(2,4);
+        var that = this;
 
-        if(randomCar == playerID && randomCar>=0 && randomCar<3){
+        for(let i=0 ;i<noOfObstacles; i++){
 
-            randomCar += 1;
+            if(i == playerID ){
 
-        }
-
-        else if(randomCar==playerID && randomCar>=3)
-        {
-
-            randomCar = 2;
-
-        }
-
-        var car = new Car(this.road,randomCar,false);
-        car.setPosition(XPOS[getRandomNumber(0,3)],getRandomNumber(-100,-90));
-
-        if(this.obstacles.length>2){
-
-            for(let i=0;i<this.obstacles.length;i++){
-
-                var diff = car.y - this.obstacles[i].y;
-
-                if(Math.abs(diff)<CARHEIGHT){
-
-                    car.y+=100;
-
-                }
+                continue;
+                
             }
+
+            var car = new Car(that.road,i,false);
+            car.setPosition(XPOS[getRandomNumber(0,3)],getRandomNumber(0,50));
+            car.draw();
+            that.obstacles.push(car);
+
         }
-        // car.draw();
-        this.obstacles.push(car);
-        // return car;
     }
 
     startGame(){
@@ -323,92 +313,54 @@ class Game{
       
         this.startGameButton.onclick = function(){
             
-            that.playerID = that.player.id;
             that.createInstances();
             that.onArrowKeyPressed();
             that.createObstacles(that.player.id);
             that.gameWindow.removeChild(that.selectCarDiv);
             that.gameWindow.appendChild(that.road);
+            that.gameLoop();
+
         }
     }
 
-    createGameOverWindow(){
-        
-        this.gameOverDiv = document.createElement('div');
-        this.yesButton = document.createElement('button');
-        this.noButton = document.createElement('button');
-        this.gameOverDiv.classList.add('game-over');
-        this.yesButton.classList.add('button-style');
-        this.noButton.classList.add('button-style');
-
-        this.gameOverDiv.innerHTML = '<br><br>Game Over<br><br>Do you want to play again??? <br><br>';
-        this.yesButton.innerHTML = 'Yes';
-        this.noButton.innerHTML = 'No';
-
-        this.gameWindow.appendChild(this.gameOverDiv);
-        this.gameOverDiv.appendChild(this.yesButton);
-        this.gameOverDiv.appendChild(this.noButton);
-
-    }
-
-
-    removeOpponentCar(opponentCar, index){
-
-        var gameDom = this.road.children;
-        console.log(gameDom);
-        this.road.removeChild(gameDom[index+2]);
-        opponentCar.splice(index,1);
-        
-    }
-
     gameLoop(){
-
-        this.startGame();
+        
         var that = this;
-
+        
         var interval = setInterval(function(){
 
             that.moveBackground();
             that.showScore();
-            // that.createObstacles(that.playerID);
+            that.onArrowKeyPressed();
 
-            for(let i=0;i<that.obstacles.length;i++){
+            for (let i=0;i < that.obstacles.length; i++){
 
-                if(that.obstacles[i].y>=ROADHEIGHT){
+                that.obstacles[i].move();
+            
+                if(that.obstacles[i].detectYCollision(that.player)){
 
-                    that.removeOpponentCar(that.obstacles,i);
+                    clearInterval(interval);
+                    that.obstacles[i].reverseDirection();
+                    that.player.reverseDirection();
+                    that.createGameOverWindow();
+
+                }
+                else if(that.obstacles[i].detectXCollision(that.player)){
+
+                    clearInterval(interval);
 
                 }
 
-                else{
+                if((ROADHEIGHT-that.obstacles[i].y)==0){
 
-                    that.obstacles[i].move();
+                    that.scoreCount++;
 
-                    if(that.obstacles[i].detectYCollision(that.player)){
-
-                        clearInterval(interval);
-                        that.obstacles[i].reverseDirection();
-                        that.player.reverseDirection();
-                        that.createGameOverWindow();
-
-                    }
-                    else if(that.obstacles[i].detectXCollision(that.player)){
-
-                        clearInterval(interval);
-                        that.createGameOverWindow();
-
-                    }
-
-                    if((ROADHEIGHT-that.obstacles[i].y)==0){
-
-                        that.scoreCount++;
-
-                    }
-                }  
+                }
+            
             }
+        
         },100)
     }
 }
 
 game = new Game(gameContainer);
-game.gameLoop();
