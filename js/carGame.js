@@ -45,7 +45,7 @@ class Car{
 
     move(){
 
-        this.y += this.dy;
+        this.y += this.dy*2;
         this.draw();
     }
 
@@ -60,7 +60,6 @@ class Car{
 
         if(((this.y+CARHEIGHT)==(ROADHEIGHT-CARHEIGHT)) && (this.x==player.x)){
 
-            console.log("collision Detected");
             return true;
 
         }
@@ -105,6 +104,7 @@ class Car{
         
         this.parenElement.appendChild(this.car);
     }
+
 }
 
 
@@ -280,41 +280,40 @@ class Game{
     }
 
     createObstacles(playerID){
+        var that = this;
+        var interval = setInterval(function(){
+            var randomCar = getRandomNumber(0,4);
+            
+            if(randomCar == playerID && randomCar>=0 && randomCar<3){
 
-        var randomCar = getRandomNumber(0,4);
+                randomCar += 1;
 
-        if(randomCar == playerID && randomCar>=0 && randomCar<3){
+            }
 
-            randomCar += 1;
+            else if(randomCar==playerID && randomCar>=3)
+            {
 
-        }
+                randomCar = 2;
 
-        else if(randomCar==playerID && randomCar>=3)
-        {
+            }
 
-            randomCar = 2;
+            var car = new Car(that.road,randomCar,false);
+            car.setPosition(XPOS[getRandomNumber(0,3)],getRandomNumber(-100,-90));
 
-        }
+            if(that.obstacles.length>2){
 
-        var car = new Car(this.road,randomCar,false);
-        car.setPosition(XPOS[getRandomNumber(0,3)],getRandomNumber(-100,-90));
+                for(let i=0;i<that.obstacles.length;i++){
 
-        if(this.obstacles.length>2){
+                    var diff = car.y - that.obstacles[i].y;
+                    if(Math.abs(diff)<=CARHEIGHT){
 
-            for(let i=0;i<this.obstacles.length;i++){
+                        car.y+=diff;
 
-                var diff = car.y - this.obstacles[i].y;
-
-                if(Math.abs(diff)<CARHEIGHT){
-
-                    car.y+=100;
-
+                    }
                 }
             }
-        }
-        // car.draw();
-        this.obstacles.push(car);
-        // return car;
+            that.obstacles.push(car);
+        },4000)
     }
 
     startGame(){
@@ -336,29 +335,28 @@ class Game{
         
         this.gameOverDiv = document.createElement('div');
         this.yesButton = document.createElement('button');
-        this.noButton = document.createElement('button');
         this.gameOverDiv.classList.add('game-over');
         this.yesButton.classList.add('button-style');
-        this.noButton.classList.add('button-style');
 
-        this.gameOverDiv.innerHTML = '<br><br>Game Over<br><br>Do you want to play again??? <br><br>';
+
+        this.gameOverDiv.innerHTML = '<br><br>Game Over<br><br>Play Again <br><br>';
         this.yesButton.innerHTML = 'Yes';
-        this.noButton.innerHTML = 'No';
 
         this.gameWindow.appendChild(this.gameOverDiv);
         this.gameOverDiv.appendChild(this.yesButton);
-        this.gameOverDiv.appendChild(this.noButton);
 
+        var that = this;
+        this.yesButton.onclick = function(){
+            document.location.reload() ;
+        }
+    
     }
-
 
     removeOpponentCar(opponentCar, index){
 
         var gameDom = this.road.children;
-        console.log(gameDom);
         this.road.removeChild(gameDom[index+2]);
         opponentCar.splice(index,1);
-        
     }
 
     gameLoop(){
@@ -370,10 +368,14 @@ class Game{
 
             that.moveBackground();
             that.showScore();
-            // that.createObstacles(that.playerID);
 
             for(let i=0;i<that.obstacles.length;i++){
 
+                if((that.obstacles[i].y-ROADHEIGHT)>=0){
+
+                    that.scoreCount++;
+
+                }
                 if(that.obstacles[i].y>=ROADHEIGHT){
 
                     that.removeOpponentCar(that.obstacles,i);
@@ -383,7 +385,8 @@ class Game{
                 else{
 
                     that.obstacles[i].move();
-
+                    
+                    
                     if(that.obstacles[i].detectYCollision(that.player)){
 
                         clearInterval(interval);
@@ -396,12 +399,6 @@ class Game{
 
                         clearInterval(interval);
                         that.createGameOverWindow();
-
-                    }
-
-                    if((ROADHEIGHT-that.obstacles[i].y)==0){
-
-                        that.scoreCount++;
 
                     }
                 }  
