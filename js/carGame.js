@@ -5,6 +5,15 @@ var ROADHEIGHT = 300;
 var CARHEIGHT = 50;
 var CARWIDTH = 30;
 
+var keyEvent = {
+    left : 'false',
+    right : 'false',
+    space : 'false'
+}
+
+var gamestate = 1;
+var carCollision = 0;
+
 
 function getRandomNumber(min,max){
     min = Math.ceil(min);
@@ -44,9 +53,17 @@ class Car{
     }
 
     move(){
-
-        this.y += this.dy*2;
-        this.draw();
+        var that = this;
+        var interval = setInterval(function(){
+            if(gamestate == 1){
+                that.y += that.dy;
+                that.draw();
+            }
+            else{
+                clearInterval(interval);
+            }
+            
+        },5000/60);
     }
 
     reverseDirection(){
@@ -107,7 +124,6 @@ class Car{
 
 }
 
-
 class Game{
 
     constructor(gameContainer){
@@ -125,6 +141,7 @@ class Game{
         this.gameOverDiv = null;
         this.yesButton = null;
         this.noButton = null;
+        this.bullet = [];
 
         //creating game elements
         this.scoreBoard = document.createElement('div');
@@ -223,7 +240,7 @@ class Game{
             }
 
             var key = event.key || event.keyCode;
-
+        
             switch(key){
 
                 case 'ArrowLeft':
@@ -231,6 +248,7 @@ class Game{
                     if(arrowCount<=0){
     
                         arrowCount=0;
+
                         that.player.setPosition(XPOS[arrowCount],0);
                         // that.detectXCollision(that.player,that.obstacles)
 
@@ -261,6 +279,10 @@ class Game{
                     
                     that.player.draw();
                     break;
+                
+                case ' ':
+                    keyEvent.space = 'true';
+                    break;
             }
         })
     }
@@ -283,7 +305,6 @@ class Game{
         var that = this;
         var interval = setInterval(function(){
             var randomCar = getRandomNumber(0,4);
-            
             if(randomCar == playerID && randomCar>=0 && randomCar<3){
 
                 randomCar += 1;
@@ -313,7 +334,7 @@ class Game{
                 }
             }
             that.obstacles.push(car);
-        },4000)
+        },2000)
     }
 
     startGame(){
@@ -352,10 +373,9 @@ class Game{
     
     }
 
-    removeOpponentCar(opponentCar, index){
+    removeOpponentCar(opponentCar,index){
 
-        var gameDom = this.road.children;
-        this.road.removeChild(gameDom[index+2]);
+        this.road.removeChild(opponentCar[index].car);
         opponentCar.splice(index,1);
     }
 
@@ -374,10 +394,6 @@ class Game{
                 if((that.obstacles[i].y-ROADHEIGHT)>=0){
 
                     that.scoreCount++;
-
-                }
-                if(that.obstacles[i].y>=ROADHEIGHT){
-
                     that.removeOpponentCar(that.obstacles,i);
 
                 }
@@ -386,10 +402,10 @@ class Game{
 
                     that.obstacles[i].move();
                     
-                    
                     if(that.obstacles[i].detectYCollision(that.player)){
 
                         clearInterval(interval);
+                        gamestate = 0;
                         that.obstacles[i].reverseDirection();
                         that.player.reverseDirection();
                         that.createGameOverWindow();
@@ -398,12 +414,13 @@ class Game{
                     else if(that.obstacles[i].detectXCollision(that.player)){
 
                         clearInterval(interval);
+                        gamestate = 0;
                         that.createGameOverWindow();
 
                     }
                 }  
             }
-        },100)
+        },100);
     }
 }
 

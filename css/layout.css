@@ -114,3 +114,11 @@
     color: #ffffff;
     background: pink;
 }
+
+.bullet{
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background-color: red;
+    position: absolute;
+}
